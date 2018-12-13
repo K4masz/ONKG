@@ -1,161 +1,59 @@
 #include <iostream>
 #include <stdio.h>
 #include <vector>
-
-
-void startCalculating(bool **pBoolean, bool *currentRegisterState);
-
-void addToUsedRegisterValues(bool *currentRegisterState);
-
-bool isAlreadyUsedState(bool *registerState);
-
-bool isEveryRegisterStateUsed();
-
-void calculateCycle(bool **conversionMatrix, bool *currentRegisterState);
-
-void calculateState(bool **conversionMatrix, bool *currentRegisterState);
+#include <math.h>
 
 using namespace std;
 
+//DEKLARACAJE FUNKCJI
+void initMatrix();
+void fillMatrix();
+void showMatrix();
+void initRegisterState();
+void initUsedRegisterValues();
+void startCalculations();
+void calculateCycle();
+void calculateState();
+void addToUsedRegisterValues();
+void calculateRegisterState();
+bool calculateCell(bool* matrixRow);
+bool isAlreadyUsedState();
+bool isEveryRegisterStateUsed();
+int parseRegisterState();
+void convertToRegister(int decimalNumber);
+//ZMIENNE GLOBALNE
+
+bool **conversionMatrix;
+bool *currentRegisterState;
 bool *usedRegisterValues;
 int flipFlopCount = 0;
 bool maximalCycle = false; //2n-1
 
-void setStartRegister(bool* &currentRegister) {
-    currentRegister[0] = 1;
-    for (int i = 1; i < flipFlopCount; i++) {
-        currentRegister[i] = 0;
-    }
-}
-
-bool calculateCell(bool* matrixRow, bool* currentRegister) {
-    int result = 0;
-
-    for (int i = 0; i < flipFlopCount; i++) {
-        result = result + (matrixRow[i] * currentRegister[i]);
-    }
-
-    return (result % 2);
-}
-
-void calculateRegisterState(bool **matrix, bool *&currentRegister) {
-    bool *nextRegister = new bool[flipFlopCount];
-
-    for (int i = 0; i < flipFlopCount; i++) {
-        nextRegister[i] = calculateCell(matrix[i], currentRegister);
-    }
-
-    currentRegister = nextRegister;
-}
-
-void fillMatrix(bool **fillingMatrix) {
-    for (int i = 0; i < flipFlopCount; i++) {
-        cout << "Podaj " << i + 1 << " wiersz: ";
-
-        for (int j = 0; j < flipFlopCount; j++) {
-            cin >> fillingMatrix[i][j];
-        }
-    }
-}
-
-void showMatrix(bool **matrix) {
-    cout << endl << endl << endl;
-
-    for (int i = 0; i < flipFlopCount; i++) {
-        for (int j = 0; j < flipFlopCount; j++) {
-            cout << matrix[i][j] << " ";
-        }
-
-        cout << "\n";
-    }
-}
-
-//metoda parsująca
-int parseRegisterState(bool *&currentRegisterState) {
-    int result;
-    for (int i = 0; i < flipFlopCount; i++)
-        if (currentRegisterState[i])
-            result += 2 ^ (currentRegisterState[i] * i);
-
-    return result;
-}
 
 
-void addToUsedRegisterValues(bool *currentRegisterState) {
-    usedRegisterValues[parseRegisterState(currentRegisterState)] = true;
-}
 
-//Początek wszystkich obliczeń
-void startCalculating(bool **conversionMatrix, bool *currentRegisterState) {
-    int cyclesNumber = 0;
-    //początek liczenia jednego cyklu
-    do {
-        //obecny rejestr idzie do użytych rejestrów
-        calculateCycle(conversionMatrix, currentRegisterState);
-
-        //koniec pętli
-        cyclesNumber++;
-
-
-    } while (isEveryRegisterStateUsed());
-
-    cout << "Finalna liczba cykli: " << cyclesNumber;
-
-}
-
-void calculateCycle(bool **conversionMatrix, bool *currentRegisterState) {
-    //przemnożyć macierz przez rejestr - mamy rejestr wynikowy
-    int statesNumber = 0;
-    do {
-
-        calculateState(conversionMatrix, currentRegisterState);
-        statesNumber++;
-    } while ((parseRegisterState(currentRegisterState) == 0) || isAlreadyUsedState(currentRegisterState));
-    //sprawdzić czy rejestr przedstawia zero jeśli jest lub czy jest w użytych (parsowane na liczbe) - jesli tak koniec
-    cout << "liczba stanów w cyklu: " << statesNumber;
-    if(statesNumber == 2^flipFlopCount-1){
-        cout<< "generuje cykl maksymalny";
-    }
-
-}
-
-void calculateState(bool **conversionMatrix, bool *currentRegisterState) {
-    addToUsedRegisterValues(currentRegisterState);
-    calculateRegisterState(conversionMatrix, currentRegisterState);
-
-}
+//FLAGI
 
 bool isEveryRegisterStateUsed() {
     bool result = true;
 
     for (int i = 0; i < flipFlopCount; i++)
-        if (usedRegisterValues[i] == false)
+        if (usedRegisterValues[i] == false) {
             result = false;
+            break;
+        }
 
     return result;
 }
 
-bool isAlreadyUsedState(bool *registerState) {
-    if (usedRegisterValues[parseRegisterState(registerState)] == true)
-        return true;
-    else
-        return false;
-
+bool isAlreadyUsedState() {
+    return usedRegisterValues[parseRegisterState()];
 }
 
+//INIT
 
-int main() {
-
-    bool **conversionMatrix;
-    bool *currentRegisterState;
-
-    int cyclesCount = 0;
-    string matrixStr;
-
-    bool test = (true * false + 1) % 2;
-    cout << test;
-
-    cout << "Podaj wielkość macierzy: ";
+void initMatrix(){
+cout << "Podaj wielkość macierzy: ";
     cin >> flipFlopCount;
     cout << endl << endl;
 
@@ -165,14 +63,156 @@ int main() {
         conversionMatrix[i] = new bool[flipFlopCount];
     }
     //INITIALIZING MATRIX - END
+}
 
-    usedRegisterValues = new bool[2 ^ flipFlopCount - 1];
+void initUsedRegisterValues(){
+    int n = pow(2, flipFlopCount) - 1;
+    usedRegisterValues = new bool[n];
 
-    fillMatrix(conversionMatrix);
-    showMatrix(conversionMatrix);
+    usedRegisterValues[0] = 1;
+    for (int  i = 1; i < n; i++) {
+        usedRegisterValues[i] = 0;
+    }
+}
+void initRegisterState() {
+    currentRegisterState = new bool[flipFlopCount];
+    //currentRegisterState[0] = 1;
+    for (int i = 0; i < flipFlopCount; i++) {
+        currentRegisterState[i] = 0;
+    }
+}
 
-    setStartRegister(currentRegisterState);
-    startCalculating(conversionMatrix, currentRegisterState);
+//MATRIX
+
+void fillMatrix() {
+    for (int i = 0; i < flipFlopCount; i++) {
+        cout << "Podaj " << i + 1 << " wiersz: ";
+
+        for (int j = 0; j < flipFlopCount; j++) {
+            cin >> conversionMatrix[i][j];
+        }
+    }
+}
+
+void showMatrix() {
+    cout << endl;
+
+    for (int i = 0; i < flipFlopCount; i++) {
+        for (int j = 0; j < flipFlopCount; j++) {
+            cout << conversionMatrix[i][j] << " ";
+        }
+
+        cout << "\n";
+    }
+}
+
+bool calculateCell(bool* matrixRow) {
+    int result = 0;
+
+    for (int i = 0; i < flipFlopCount; i++) {
+        result = result + (matrixRow[i] * currentRegisterState[i]);
+    }
+
+    return (result % 2);
+}
+
+void calculateRegisterState() {
+    bool *nextRegister = new bool[flipFlopCount];
+
+    for (int i = 0; i < flipFlopCount; i++) {
+        nextRegister[i] = calculateCell(conversionMatrix[i]);
+    }
+
+    currentRegisterState = nextRegister;
+}
+
+//LOGIKA
+
+void calculateState() {
+    addToUsedRegisterValues();
+    calculateRegisterState();
+
+}
+
+void calculateCycle() {
+    //przemnożyć macierz przez rejestr - mamy rejestr wynikowy
+    int statesNumber = 0;
+    do {
+        statesNumber++;
+        calculateState();
+
+    } while ((parseRegisterState() != 0) && !isAlreadyUsedState());
+    //sprawdzić czy rejestr przedstawia zero jeśli jest lub czy jest w użytych (parsowane na liczbe) - jesli tak koniec
+    cout << "liczba stanów w cyklu: " << statesNumber;
+    if(statesNumber == pow(2, flipFlopCount)-1) {
+        cout<< "generuje cykl maksymalny";
+    }
+
+}
+
+int parseRegisterState() { //metoda parsująca
+    int result = 0;
+    for (int i = 0; i < flipFlopCount; i++)
+        if (currentRegisterState[i])
+            result += pow(2, i);
+
+    return result;
+}
+
+void addToUsedRegisterValues() {
+    usedRegisterValues[parseRegisterState()] = true;
+}
+
+void findFirstAvailableState(){
+    for(int i =1 ; i< flipFlopCount ; i++ ){
+        if(!usedRegisterValues[i]){
+            convertToRegister(i);
+            break;
+        }
+    }
+}
+
+void convertToRegister(int decimalNumber){
+    int i =0 ;
+    do{
+    currentRegisterState[i] = decimalNumber%2;
+    decimalNumber /= 2;
+    i++;
+    }while(decimalNumber > 0);
+}
+
+void startCalculations() { //Początek wszystkich obliczeń
+    int cyclesNumber = 0;
+    //początek liczenia jednego cyklu
+    do {
+        //obecny rejestr idzie do użytych rejestrów
+        findFirstAvailableState();
+        calculateCycle();
+
+        //koniec pętli
+        cyclesNumber++;
+
+
+    } while (!isEveryRegisterStateUsed());
+
+    cout << "Finalna liczba cykli: " << cyclesNumber;
+
+}
+
+
+
+//MAIN
+
+int main() {
+
+    initMatrix();
+    fillMatrix();
+    showMatrix();
+
+    initRegisterState();
+    initUsedRegisterValues();
+
+    startCalculations();
 
     return 0;
 }
