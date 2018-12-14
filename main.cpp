@@ -37,7 +37,9 @@ bool maximalCycle = false; //2n-1
 bool isEveryRegisterStateUsed() {
     bool result = true;
 
-    for (int i = 0; i < flipFlopCount; i++)
+    int n = pow(2, flipFlopCount) -1;
+
+    for (int i = 1; i <= n; i++)
         if (usedRegisterValues[i] == false) {
             result = false;
             break;
@@ -143,9 +145,9 @@ void calculateCycle() {
 
     } while ((parseRegisterState() != 0) && !isAlreadyUsedState());
     //sprawdzić czy rejestr przedstawia zero jeśli jest lub czy jest w użytych (parsowane na liczbe) - jesli tak koniec
-    cout << "liczba stanów w cyklu: " << statesNumber;
+    cout << endl << "liczba stanów w cyklu: " << statesNumber;
     if(statesNumber == pow(2, flipFlopCount)-1) {
-        cout<< "generuje cykl maksymalny";
+        maximalCycle = true;
     }
 
 }
@@ -164,7 +166,9 @@ void addToUsedRegisterValues() {
 }
 
 void findFirstAvailableState(){
-    for(int i =1 ; i< flipFlopCount ; i++ ){
+    int n = pow(flipFlopCount, 2) - 1;
+
+    for(int i =1 ; i<= n ; i++ ){
         if(!usedRegisterValues[i]){
             convertToRegister(i);
             break;
@@ -188,15 +192,15 @@ void startCalculations() { //Początek wszystkich obliczeń
         //obecny rejestr idzie do użytych rejestrów
         findFirstAvailableState();
         calculateCycle();
-
         //koniec pętli
         cyclesNumber++;
-
-
     } while (!isEveryRegisterStateUsed());
 
-    cout << "Finalna liczba cykli: " << cyclesNumber;
+    cout << endl << "Finalna liczba cykli: " << cyclesNumber;
 
+    if (maximalCycle) {
+        cout << endl << "generuje cykl maksymalny";
+    }
 }
 
 
